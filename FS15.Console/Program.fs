@@ -41,6 +41,17 @@ module Algorithm =
 
 [<AutoOpen>]
 module Game15 =
+
+  type 'a Board = Board of 'a[,]
+    with
+    /// <summary></summary>
+    static member swap arr (x1,y1) (x2, y2) =
+      let v1 = Array2D.get arr x1 y1
+      let v2 = Array2D.get arr x2 y2
+      Array2D.set arr x1 y1 v2
+      Array2D.set arr x2 y2 v1
+
+module GameSort =
   let rec swap i ss = 
     match i, ss with
     | n, _ when n < 0 -> failwith (sprintf "Cannot swap at negative index %i" i)
