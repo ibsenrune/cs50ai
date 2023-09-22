@@ -40,7 +40,8 @@ module Algorithm =
     let frontier = frontierFactory t
     frontier.push root
     let emptyExploredSet : Set<'s> = Set.empty
-    let rec solve' (frontier : Datastructures.IFrontier<'a>) explored =
+
+    let rec solve' (frontier : Datastructures.IFrontier<Node<'a,_>>) explored =
       if frontier.isEmpty() then
         None
       else
@@ -57,6 +58,7 @@ module Algorithm =
             |> List.filter (fun (Node (s,_)) -> not <| Set.contains s explored')
           List.iter frontier.push reachableNodes
           solve' frontier explored'
+
     solve' frontier emptyExploredSet
 
 
