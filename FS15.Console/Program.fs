@@ -1,30 +1,50 @@
 ﻿namespace Search
 
 [<AutoOpen>]
+module Datastructures =
+  open System.Collections.Generic
+  type IFrontier<'a> =
+    abstract member push : 'a -> unit
+    abstract member pop : unit -> 'a
+    abstract member isEmpty : unit -> bool
+
+  type StackFrontier<'a>() =
+    let stack = new Stack<'a>()
+    interface IFrontier<'a> with
+      member this.push x = stack.Push(x)
+      member this.pop () = stack.Pop()
+      member this.isEmpty () = stack.Count = 0
+
+  type QueueFrontier<'a>() =
+    let queue = new Queue<'a>()
+    interface IFrontier<'a> with
+      member this.push x = queue.Enqueue(x)
+      member this.pop () = queue.Dequeue()
+      member this.isEmpty() = queue.Count = 0
+
+[<AutoOpen>]
 module Algorithm =
 
   type Node<'s,'a> = Node of 's * (('a * Node<'s,'a>) option)
   type Result<'s,'a> = Result of ('s -> 'a -> 's)
   type Actions<'s,'a> = Actions of ('s -> 'a list)
   type GoalTest<'s> = GoalTest of ('s -> bool)
-  type Frontier<'s,'a> = Frontier of Node<'s,'a> list
-    with
-    static member push (Frontier fs) node = Frontier (node::fs)
-    static member pop (Frontier fs) =
-      match fs with
-      | [] -> failwith "Cannot pop from empty frontier"
-      | x::xs -> x, Frontier xs
-    static member empty (Frontier fs) = fs = []
+  type SearchType = BreadthFirstSearch | DepthFirstSearch
 
-  let solve (initial) (Result result) (Actions actions) (GoalTest goalTest) =
+  let private frontierFactory<'a> : SearchType -> Datastructures.IFrontier<'a> = function
+   | BreadthFirstSearch -> Datastructures.QueueFrontier()
+   | DepthFirstSearch -> Datastructures.StackFrontier()
+
+  let solve (t : SearchType) (initial) (Result result) (Actions actions) (GoalTest goalTest) =
     let root = Node(initial, None)
-    let frontier = Frontier [root]
+    let frontier = frontierFactory t
+    frontier.push root
     let emptyExploredSet : Set<'s> = Set.empty
-    let rec solve' frontier explored =
-      if frontier |> Frontier.empty then
+    let rec solve' (frontier : Datastructures.IFrontier<'a>) explored =
+      if frontier.isEmpty() then
         None
       else
-        let (currentNode, restFrontier) = Frontier.pop frontier
+        let currentNode = frontier.pop()
         let (Node (currentState,_)) = currentNode
         if goalTest currentState then
           Some currentNode
@@ -35,7 +55,8 @@ module Algorithm =
             |> actions
             |> List.map (fun a -> Node (result currentState a, Some(a, currentNode)))
             |> List.filter (fun (Node (s,_)) -> not <| Set.contains s explored')
-          solve' (reachableNodes |> List.fold Frontier.push restFrontier) explored'
+          List.iter frontier.push reachableNodes
+          solve' frontier explored'
     solve' frontier emptyExploredSet
 
 
