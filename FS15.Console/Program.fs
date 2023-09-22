@@ -9,7 +9,7 @@ module Algorithm =
   type GoalTest<'s> = GoalTest of ('s -> bool)
   type Frontier<'s,'a> = Frontier of Node<'s,'a> list
     with
-    static member push nodes (Frontier fs) = Frontier (nodes@fs)
+    static member push (Frontier fs) node = Frontier (node::fs)
     static member pop (Frontier fs) =
       match fs with
       | [] -> failwith "Cannot pop from empty frontier"
@@ -35,7 +35,7 @@ module Algorithm =
             |> actions
             |> List.map (fun a -> Node (result currentState a, Some(a, currentNode)))
             |> List.filter (fun (Node (s,_)) -> not <| Set.contains s explored')
-          solve' (Frontier.push reachableNodes restFrontier) explored'
+          solve' (reachableNodes |> List.fold Frontier.push restFrontier) explored'
     solve' frontier emptyExploredSet
 
 
